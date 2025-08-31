@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  community-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: community-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - community-db
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    networks:
+      - course-network
+
+  community-db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: community-db
+    ports:
+      - "1434:1433"
+    environment:
+      SA_PASSWORD: "YourStrong(!)Password"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./init_db:/docker-entrypoint-initdb.d
+    networks:
+      - course-network
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong(!)Password' -Q 'SELECT 1'" ]
+      interval: 20s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  mssql_data:
+
+networks:
+  course-network:
